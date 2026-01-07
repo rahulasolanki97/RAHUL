@@ -126,7 +126,7 @@
             100% { transform: rotate(360deg); }
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
         }
         .header {
@@ -144,6 +144,78 @@
             font-size: 0.9em;
             margin-bottom: 15px;
             display: inline-block;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+        }
+        .nav-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .nav-tab.active {
+            background: #2563eb;
+            color: white;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-card.income .value { color: #16a34a; }
+        .stat-card.expense .value { color: #ef4444; }
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #2563eb;
+            transition: width 0.3s;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -210,46 +282,114 @@
             <button class="btn btn-danger small-btn" onclick="logout()">Logout</button>
         </div>
 
-        <div class="box">
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showTab('add')">➕ Add Transaction</button>
+            <button class="nav-tab" onclick="showTab('history')">📜 History</button>
+        </div>
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboardTab">
             <div class="balance">
                 <div>Current Balance</div>
-                <div class="balance-amount" id="balance">₹0.00</div>
+                <div class="balance-amount" id="dashboardBalance">₹0.00</div>
             </div>
 
-            <input type="text" class="input" id="desc" placeholder="Description">
-            <input type="number" class="input" id="amt" placeholder="Amount">
-            <select class="input" id="cat">
-                <option>Food</option>
-                <option>Fuel</option>
-                <option>Recharge</option>
-                <option>Donations</option>
-                <option>Emi</option>
-                <option>Cash expenses</option>
-                <option>Shopping</option>
-                <option>Bills</option>
-                <option>Entertainment</option>
-                <option>Health</option>
-                <option>Salary</option>
-                <option>Other</option>
-            </select>
+            <div class="grid">
+                <div class="stat-card income">
+                    <h3>Total Income (This Month)</h3>
+                    <div class="value" id="monthIncome">₹0</div>
+                </div>
+                <div class="stat-card expense">
+                    <h3>Total Expenses (This Month)</h3>
+                    <div class="value" id="monthExpense">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Transactions (This Month)</h3>
+                    <div class="value" id="monthCount">0</div>
+                </div>
+            </div>
 
-            <button class="btn btn-secondary" onclick="add('income')">💰 Add Income</button>
-            <button class="btn btn-primary" onclick="add('expense')">💸 Add Expense</button>
+            <!-- Period Selector -->
+            <div class="chart-container">
+                <h3 style="margin-bottom: 15px;">Expense Summary</h3>
+                <select class="input" id="periodSelector" onchange="updateDashboard()">
+                    <option value="today">Today</option>
+                    <option value="month" selected>This Month</option>
+                    <option value="year">This Year</option>
+                </select>
 
-            <h3 style="margin-top: 30px; margin-bottom: 10px;">Transactions</h3>
-            <div id="list"></div>
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <strong>Income:</strong>
+                        <span id="periodIncome" style="color: #16a34a; font-weight: bold;">₹0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <strong>Expenses:</strong>
+                        <span id="periodExpense" style="color: #ef4444; font-weight: bold;">₹0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <strong>Net:</strong>
+                        <span id="periodNet" style="font-weight: bold;">₹0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Breakdown -->
+            <div class="chart-container">
+                <h3 style="margin-bottom: 15px;">Top Expense Categories</h3>
+                <div id="categoryList"></div>
+            </div>
+        </div>
+
+        <!-- ADD TRANSACTION TAB -->
+        <div id="addTab" class="hidden">
+            <div class="box" style="margin: 0;">
+                <div class="balance">
+                    <div>Current Balance</div>
+                    <div class="balance-amount" id="addBalance">₹0.00</div>
+                </div>
+
+                <input type="text" class="input" id="desc" placeholder="Description">
+                <input type="number" class="input" id="amt" placeholder="Amount">
+                <select class="input" id="cat">
+                    <option>Food</option>
+                    <option>Fuel</option>
+                    <option>Recharge</option>
+                    <option>Donations</option>
+                    <option>Emi</option>
+                    <option>Cash expenses</option>
+                    <option>Shopping</option>
+                    <option>Bills</option>
+                    <option>Entertainment</option>
+                    <option>Health</option>
+                    <option>Salary</option>
+                    <option>Other</option>
+                </select>
+
+                <button class="btn btn-secondary" onclick="add('income')">💰 Add Income</button>
+                <button class="btn btn-primary" onclick="add('expense')">💸 Add Expense</button>
+            </div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="historyTab" class="hidden">
+            <div class="box" style="margin: 0;">
+                <h3 style="margin-bottom: 10px;">All Transactions</h3>
+                <div id="list"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // ✅ UPDATED GOOGLE APPS SCRIPT URL
         const URL = 'https://script.google.com/macros/s/AKfycbx3NEU6GWuBLmhRKC6N_PbVqip52ROOS9TdwIadgJMCfWhS0Hsm1tCxgYSYnsP9kQli/exec';
 
         let user = null;
         let pass = null;
         let transactions = [];
         let balance = 0;
-        let tempResetUsername = '';
+        let currentTab = 'dashboard';
 
         function show(id) { document.getElementById(id).classList.remove('hidden'); }
         function hide(id) { document.getElementById(id).classList.add('hidden'); }
@@ -268,6 +408,26 @@
             setTimeout(() => el.style.display = 'none', 5000);
         }
 
+        function showTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            hide('dashboardTab');
+            hide('addTab');
+            hide('historyTab');
+            
+            if (tab === 'dashboard') {
+                show('dashboardTab');
+                updateDashboard();
+            } else if (tab === 'add') {
+                show('addTab');
+            } else if (tab === 'history') {
+                show('historyTab');
+                updateHistory();
+            }
+        }
+
         function toggleAuth() {
             document.getElementById('loginForm').classList.toggle('hidden');
             document.getElementById('signupForm').classList.toggle('hidden');
@@ -277,7 +437,6 @@
 
         function showLogin() {
             hide('forgotPasswordForm');
-            hide('resetPasswordForm');
             show('loginForm');
             document.getElementById('error').style.display = 'none';
             document.getElementById('success').style.display = 'none';
@@ -293,28 +452,17 @@
 
         async function retrievePassword() {
             const email = document.getElementById('forgotEmail').value.trim();
-
             if (!email) {
                 showError('Please enter your email address');
                 return;
             }
 
             show('loading');
-
             try {
-                const forgotUrl = `${URL}?action=getPassword&email=${encodeURIComponent(email)}`;
-                
-                const response = await fetch(forgotUrl, {
+                const response = await fetch(`${URL}?action=getPassword&email=${encodeURIComponent(email)}`, {
                     redirect: 'follow'
                 });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const text = await response.text();
-                const result = JSON.parse(text);
-
+                const result = await response.json();
                 hide('loading');
 
                 if (result.success) {
@@ -325,7 +473,6 @@
                 }
             } catch (e) {
                 hide('loading');
-                console.error('Retrieve password error:', e);
                 showError('Error: ' + e.message);
             }
         }
@@ -354,28 +501,11 @@
             }
 
             show('loading');
-
             try {
-                console.log('Attempting signup...');
-                console.log('Using URL:', URL);
-                const signupUrl = `${URL}?action=signup&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-                console.log('Full signup URL:', signupUrl);
-                
-                const response = await fetch(signupUrl, {
+                const response = await fetch(`${URL}?action=signup&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
                     redirect: 'follow'
                 });
-                console.log('Response status:', response.status);
-                console.log('Response OK:', response.ok);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const text = await response.text();
-                console.log('Response text:', text);
-                
-                const result = JSON.parse(text);
-
+                const result = await response.json();
                 hide('loading');
 
                 if (result.success) {
@@ -390,9 +520,7 @@
                 }
             } catch (e) {
                 hide('loading');
-                console.error('Signup error:', e);
-                console.error('Error details:', e.message);
-                showError('Connection error. Please check: 1) Script URL is correct 2) Script is deployed as "Anyone" 3) Check browser console (F12) for details');
+                showError('Connection error: ' + e.message);
             }
         }
 
@@ -406,19 +534,9 @@
             }
 
             show('loading');
-
             try {
-                console.log('Attempting login...');
-                const loginUrl = `${URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
-                
-                const response = await fetch(loginUrl);
-                console.log('Response status:', response.status);
-                
-                const text = await response.text();
-                console.log('Response:', text);
-                
-                const result = JSON.parse(text);
-
+                const response = await fetch(`${URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+                const result = await response.json();
                 hide('loading');
 
                 if (result.success) {
@@ -430,17 +548,66 @@
                     localStorage.setItem('user', user);
                     localStorage.setItem('pass', pass);
 
+                    // Check and cleanup old month data
+                    await checkAndCleanupOldData();
+
                     hide('authBox');
                     show('app');
                     document.getElementById('userName').textContent = user;
-                    updateUI();
+                    updateAllUI();
                 } else {
                     showError(result.message);
                 }
             } catch (e) {
                 hide('loading');
-                console.error('Login error:', e);
                 showError('Error: ' + e.message);
+            }
+        }
+
+        async function checkAndCleanupOldData() {
+            const lastCleanup = localStorage.getItem('lastCleanup');
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            if (lastCleanup) {
+                const lastDate = new Date(lastCleanup);
+                if (lastDate.getMonth() === currentMonth && lastDate.getFullYear() === currentYear) {
+                    return; // Already cleaned up this month
+                }
+            }
+
+            // Filter transactions to keep only current month
+            const filteredTransactions = transactions.filter(t => {
+                const tDate = new Date(t.date);
+                return tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
+            });
+
+            if (filteredTransactions.length !== transactions.length) {
+                transactions = filteredTransactions;
+                
+                // Recalculate balance
+                balance = 0;
+                transactions.forEach(t => {
+                    if (t.type === 'income') balance += t.amount;
+                    else balance -= t.amount;
+                });
+
+                // Update on server
+                try {
+                    await fetch(URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'cleanupOldData',
+                            username: user,
+                            transactions: JSON.stringify(transactions),
+                            balance: balance
+                        })
+                    });
+                    localStorage.setItem('lastCleanup', now.toISOString());
+                } catch (e) {
+                    console.error('Cleanup error:', e);
+                }
             }
         }
 
@@ -468,14 +635,14 @@
             }
 
             show('loading');
-
             try {
                 const transaction = {
                     type: type,
                     description: desc,
                     amount: amt,
                     category: cat,
-                    date: new Date().toISOString()
+                    date: new Date().toISOString(),
+                    id: Date.now() // Unique ID for each transaction
                 };
 
                 const response = await fetch(URL, {
@@ -495,7 +662,7 @@
                     balance = result.balance;
                     document.getElementById('desc').value = '';
                     document.getElementById('amt').value = '';
-                    updateUI();
+                    updateAllUI();
                     showSuccess(type === 'income' ? 'Income added!' : 'Expense added!');
                 }
             } catch (e) {
@@ -504,18 +671,17 @@
             }
         }
 
-        async function del(index) {
+        async function del(transactionId) {
             if (!confirm('Delete this transaction?')) return;
 
             show('loading');
-
             try {
                 const response = await fetch(URL, {
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'deleteTransaction',
                         username: user,
-                        index: index
+                        transactionId: transactionId // Use ID instead of index
                     })
                 });
 
@@ -525,7 +691,7 @@
                 if (result.success) {
                     transactions = result.transactions;
                     balance = result.balance;
-                    updateUI();
+                    updateAllUI();
                     showSuccess('Transaction deleted');
                 }
             } catch (e) {
@@ -534,16 +700,105 @@
             }
         }
 
-        function updateUI() {
-            document.getElementById('balance').textContent = `₹${balance.toFixed(2)}`;
+        function updateAllUI() {
+            document.getElementById('dashboardBalance').textContent = `₹${balance.toFixed(2)}`;
+            document.getElementById('addBalance').textContent = `₹${balance.toFixed(2)}`;
+            
+            if (currentTab === 'dashboard') updateDashboard();
+            if (currentTab === 'history') updateHistory();
+        }
 
+        function updateDashboard() {
+            const period = document.getElementById('periodSelector').value;
+            const now = new Date();
+            
+            let filteredTransactions = [];
+            
+            if (period === 'today') {
+                filteredTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    return tDate.toDateString() === now.toDateString();
+                });
+            } else if (period === 'month') {
+                filteredTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+                });
+            } else if (period === 'year') {
+                filteredTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    return tDate.getFullYear() === now.getFullYear();
+                });
+            }
+
+            let income = 0, expense = 0;
+            filteredTransactions.forEach(t => {
+                if (t.type === 'income') income += t.amount;
+                else expense += t.amount;
+            });
+
+            document.getElementById('periodIncome').textContent = `₹${income.toFixed(2)}`;
+            document.getElementById('periodExpense').textContent = `₹${expense.toFixed(2)}`;
+            const net = income - expense;
+            const netEl = document.getElementById('periodNet');
+            netEl.textContent = `₹${net.toFixed(2)}`;
+            netEl.style.color = net >= 0 ? '#16a34a' : '#ef4444';
+
+            // Month stats
+            const monthTransactions = transactions.filter(t => {
+                const tDate = new Date(t.date);
+                return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+            });
+            
+            let monthIncome = 0, monthExpense = 0;
+            monthTransactions.forEach(t => {
+                if (t.type === 'income') monthIncome += t.amount;
+                else monthExpense += t.amount;
+            });
+
+            document.getElementById('monthIncome').textContent = `₹${monthIncome.toFixed(2)}`;
+            document.getElementById('monthExpense').textContent = `₹${monthExpense.toFixed(2)}`;
+            document.getElementById('monthCount').textContent = monthTransactions.length;
+
+            // Category breakdown
+            const categories = {};
+            filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
+                categories[t.category] = (categories[t.category] || 0) + t.amount;
+            });
+
+            const sortedCategories = Object.entries(categories).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const maxAmount = sortedCategories[0]?.[1] || 1;
+
+            const categoryList = document.getElementById('categoryList');
+            if (sortedCategories.length === 0) {
+                categoryList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No expenses yet</p>';
+            } else {
+                categoryList.innerHTML = sortedCategories.map(([cat, amt]) => `
+                    <div class="category-item">
+                        <div style="flex: 1;">
+                            <strong>${cat}</strong>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${(amt/maxAmount)*100}%"></div>
+                            </div>
+                        </div>
+                        <div style="margin-left: 15px; font-weight: bold; color: #ef4444;">
+                            ₹${amt.toFixed(2)}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateHistory() {
             const list = document.getElementById('list');
             if (transactions.length === 0) {
                 list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No transactions yet</p>';
                 return;
             }
 
-            list.innerHTML = transactions.map((t, i) => `
+            // Show newest first
+            const sorted = [...transactions].reverse();
+            list.innerHTML = sorted.map(t => `
                 <div class="transaction ${t.type}">
                     <div>
                         <strong>${t.description}</strong><br>
@@ -553,24 +808,4 @@
                         <span class="amount ${t.type}">
                             ${t.type === 'income' ? '+' : '-'}₹${t.amount.toFixed(2)}
                         </span>
-                        <button class="btn btn-danger small-btn" onclick="del(${i})">×</button>
-                    </div>
-                </div>
-            `).reverse().join('');
-        }
-
-        // Auto login
-        window.onload = async () => {
-            const savedUser = localStorage.getItem('user');
-            const savedPass = localStorage.getItem('pass');
-
-            if (savedUser && savedPass) {
-                document.getElementById('loginUser').value = savedUser;
-                document.getElementById('loginPass').value = savedPass;
-            }
-        };
-    </script>
-</body>
-</html>
-
-
+                        <button class="btn btn-danger small-btn" onclick="del
