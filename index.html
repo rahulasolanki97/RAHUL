@@ -1,111 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Expense Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body{font-family:Arial;background:#f4f4f4;padding:20px}
-.box{background:#fff;padding:20px;max-width:500px;margin:auto;border-radius:10px}
-.txn{display:flex;justify-content:space-between;margin:6px 0}
-button{cursor:pointer}
+body{
+  font-family:Arial;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  min-height:100vh;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+h2{text-align:center}
+.dashboard{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin:15px 0;
+}
+.box{
+  padding:15px;
+  border-radius:10px;
+  color:#fff;
+  text-align:center;
+}
+.income{background:#22c55e}
+.expense{background:#ef4444}
+.net{background:#2563eb}
+.balance{
+  background:#2563eb;
+  color:#fff;
+  padding:15px;
+  border-radius:10px;
+  text-align:center;
+  margin-bottom:15px;
+}
+input,select{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+button{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.add-income{background:#facc15}
+.add-expense{background:#2563eb;color:#fff}
+.txn{
+  background:#f9f9f9;
+  padding:10px;
+  margin:6px 0;
+  border-radius:8px;
+  display:flex;
+  justify-content:space-between;
+}
+small{color:#666}
 </style>
 </head>
 
 <body>
-<div class="box">
-<h2>Expense Tracker</h2>
 
-<p>
-Income: <b id="income">0</b> |
-Expense: <b id="expense">0</b> |
-Net: <b id="net">0</b>
-</p>
+<div class="card">
+<h2>💰 Expense Tracker</h2>
+<p>Welcome, <b id="user"></b></p>
 
-<input id="amt" type="number" placeholder="Amount">
+<div class="dashboard">
+  <div class="box income">Income<br><b id="inc">₹0</b></div>
+  <div class="box expense">Expense<br><b id="exp">₹0</b></div>
+  <div class="box net">Net<br><b id="net">₹0</b></div>
+</div>
+
+<div class="balance">
+  Balance<br>
+  <b id="bal">₹0</b>
+</div>
+
+<!-- INPUT ORDER AS REQUESTED -->
+<input id="amount" type="number" placeholder="Amount">
 <input id="desc" placeholder="Description">
 <select id="cat">
   <option>Food</option>
+  <option>Fuel</option>
   <option>Bills</option>
   <option>Shopping</option>
 </select>
 
-<br><br>
-<button onclick="add('income')">Add Income</button>
-<button onclick="add('expense')">Add Expense</button>
+<button class="add-income" onclick="add('income')">➕ Add Income</button>
+<button class="add-expense" onclick="add('expense')">➖ Add Expense</button>
 
 <hr>
 <div id="list"></div>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbxuFGKwVh0K7SaXigRGqW9774Fa12tb0kEP-vN0LCPiZbwN967DrDXrqx0LHjKIAZ2x/exec";
+const URL = "https://script.google.com/macros/s/AKfycbzI4rxvQhIvx4K_FcxHDubC0iKNLYWjY8nUd8x8J3oWAbth7bZFJxBCPyyFSBrOiwuz/exec";
 const USERNAME = "Rahul";
+document.getElementById("user").textContent = USERNAME;
+
 let transactions = [];
 
 /* ---------- LOAD ---------- */
-async function load() {
+async function load(){
   const r = await fetch(`${URL}?action=fetch&username=${USERNAME}`);
   const j = await r.json();
   transactions = j.transactions || [];
-  dashboard();
+  updateDashboard();
   render();
 }
 
 /* ---------- ADD ---------- */
-async function add(type) {
-  await fetch(URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "add",
-      username: USERNAME,
-      type,
-      description: desc.value,
-      amount: +amt.value,
-      category: cat.value
+async function add(type){
+  const amt = +amount.value;
+  if(!amt || !desc.value) return alert("Enter amount & description");
+
+  await fetch(URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"add",
+      username:USERNAME,
+      type:type,
+      description:desc.value,
+      amount:amt,
+      category:cat.value
     })
   });
-  amt.value = desc.value = "";
+
+  amount.value = "";
+  desc.value = "";
   load();
 }
 
 /* ---------- DELETE ---------- */
-async function del(row) {
-  await fetch(URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "delete",
-      username: USERNAME,
-      row
+async function del(row){
+  if(!confirm("Delete this transaction?")) return;
+  await fetch(URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"delete",
+      username:USERNAME,
+      row:row
     })
   });
   load();
 }
 
 /* ---------- DASHBOARD ---------- */
-function dashboard() {
+function updateDashboard(){
+  let income=0,expense=0;
   const now = new Date();
-  let inc = 0, exp = 0;
 
-  transactions.forEach(t => {
+  transactions.forEach(t=>{
     const d = new Date(t.date.split("T")[0]);
-    if (d.getMonth() === now.getMonth() &&
-        d.getFullYear() === now.getFullYear()) {
-      t.type === "income" ? inc += t.amount : exp += t.amount;
+    if(d.getMonth()===now.getMonth() &&
+       d.getFullYear()===now.getFullYear()){
+      t.type==="income" ? income+=t.amount : expense+=t.amount;
     }
   });
 
-  income.textContent = inc;
-  expense.textContent = exp;
-  net.textContent = inc - exp;
+  inc.textContent = `₹${income}`;
+  exp.textContent = `₹${expense}`;
+  net.textContent = `₹${income-expense}`;
+  bal.textContent = `₹${income-expense}`;
 }
 
 /* ---------- LIST ---------- */
-function render() {
+function render(){
   list.innerHTML = transactions
     .sort((a,b)=>new Date(b.date)-new Date(a.date))
-    .map(t => `
+    .map(t=>`
       <div class="txn">
-        <span>${t.type} ₹${t.amount} (${t.category})</span>
+        <div>
+          ${t.type==="income"?"+":"-"}₹${t.amount}<br>
+          <small>${t.description} • ${t.category}</small>
+        </div>
         <button onclick="del(${t.row})">❌</button>
       </div>
     `).join("");
@@ -113,5 +196,6 @@ function render() {
 
 load();
 </script>
+
 </body>
 </html>
