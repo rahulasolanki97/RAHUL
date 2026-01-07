@@ -383,7 +383,7 @@
     </div>
 
     <script>
-        const URL = 'https://script.google.com/macros/s/AKfycbx3NEU6GWuBLmhRKC6N_PbVqip52ROOS9TdwIadgJMCfWhS0Hsm1tCxgYSYnsP9kQli/exec';
+        const URL = 'https://script.google.com/macros/s/AKfycbxMIWp8C6Bi4orSSMExzpfYpy2NXfknYvyk_udH3YVGx2QJiZEGluRp3F3PpE-IqSPP/exec';
 
         let user = null, pass = null, transactions = [], balance = 0, currentTab = 'dashboard';
 
@@ -773,4 +773,27 @@
             list.innerHTML = [...transactions].reverse().map(t => `
                 <div class="transaction ${t.type}">
                     <div>
-                        <strong>${t.description}</strong
+                        <strong>${t.description}</strong><br>
+                        <small style="color: #666">${t.category} • ${new Date(t.date).toLocaleDateString()}</small>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span class="amount ${t.type}">
+                            ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}
+                        </span>
+                        <button class="btn btn-danger small-btn" onclick="del('${t.id}')">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.onload = () => {
+            const savedUser = localStorage.getItem('user');
+            const savedPass = localStorage.getItem('pass');
+            if (savedUser && savedPass) {
+                document.getElementById('loginUser').value = savedUser;
+                document.getElementById('loginPass').value = savedPass;
+            }
+        };
+    </script>
+</body>
+</html
