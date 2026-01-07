@@ -1,235 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expense Tracker</title>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-    font-family:'Segoe UI',sans-serif;
-    background:linear-gradient(135deg,#667eea,#764ba2);
-    min-height:100vh;
-    padding:20px
-}
-.box{
-    max-width:500px;
-    margin:50px auto;
-    background:#fff;
-    border-radius:15px;
-    padding:30px;
-    box-shadow:0 10px 40px rgba(0,0,0,.3)
-}
-.hidden{display:none!important}
-.input{width:100%;padding:10px;margin:8px 0;border:2px solid #ddd;border-radius:8px}
-.btn{width:100%;padding:12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:8px 0}
-.btn-primary{background:#2563eb;color:#fff}
-.btn-secondary{background:#ffd93d}
-.btn-danger{background:#ef4444;color:#fff}
-.balance{
-    background:#2563eb;color:#fff;padding:20px;
-    border-radius:10px;text-align:center;margin:20px 0
-}
-.balance-amount{font-size:2.5em;font-weight:bold}
-.transaction{
-    background:#f9f9f9;padding:12px;margin:8px 0;
-    border-radius:8px;display:flex;justify-content:space-between
-}
-.transaction.income{border-left:4px solid #16a34a}
-.transaction.expense{border-left:4px solid #ef4444}
-.loading{
-    position:fixed;inset:0;background:rgba(0,0,0,.6);
-    display:flex;align-items:center;justify-content:center;z-index:99
-}
-.spinner{
-    width:40px;height:40px;border:4px solid #eee;
-    border-top:4px solid #2563eb;border-radius:50%;
-    animation:spin 1s linear infinite
-}
-@keyframes spin{100%{transform:rotate(360deg)}}
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.box{background:#fff;padding:20px;max-width:500px;margin:auto;border-radius:10px}
+.txn{display:flex;justify-content:space-between;margin:6px 0}
+button{cursor:pointer}
 </style>
 </head>
 
 <body>
+<div class="box">
+<h2>Expense Tracker</h2>
 
-<div class="loading hidden" id="loading">
-    <div class="spinner"></div>
-</div>
+<p>
+Income: <b id="income">0</b> |
+Expense: <b id="expense">0</b> |
+Net: <b id="net">0</b>
+</p>
 
-<!-- LOGIN -->
-<div class="box" id="authBox">
-    <h2>💰 Expense Tracker</h2>
-    <input class="input" id="loginUser" placeholder="Username">
-    <input class="input" id="loginPass" type="password" placeholder="Password">
-    <button class="btn btn-primary" onclick="handleLogin()">Login</button>
-</div>
+<input id="amt" type="number" placeholder="Amount">
+<input id="desc" placeholder="Description">
+<select id="cat">
+  <option>Food</option>
+  <option>Bills</option>
+  <option>Shopping</option>
+</select>
 
-<!-- APP -->
-<div class="box hidden" id="app">
-    <h3>Welcome, <span id="userName"></span></h3>
-    <button class="btn btn-danger" onclick="handleLogout()">Logout</button>
+<br><br>
+<button onclick="add('income')">Add Income</button>
+<button onclick="add('expense')">Add Expense</button>
 
-    <div class="balance">
-        Balance
-        <div class="balance-amount" id="balance">₹0.00</div>
-    </div>
-
-    <select class="input" id="period" onchange="updateDashboard()">
-        <option value="today">Today</option>
-        <option value="month" selected>This Month</option>
-        <option value="year">This Year</option>
-    </select>
-
-    <p>Income: <b id="income">₹0</b></p>
-    <p>Expense: <b id="expense">₹0</b></p>
-    <p>Net: <b id="net">₹0</b></p>
-
-    <hr><br>
-
-    <input class="input" id="amt" type="number" placeholder="Amount">
-    <input class="input" id="desc" placeholder="Description">
-    <select class="input" id="cat">
-        <option>Food</option><option>Fuel</option><option>Bills</option>
-        <option>Shopping</option><option>Salary</option><option>Other</option>
-    </select>
-
-    <button class="btn btn-secondary" onclick="addTxn('income')">Add Income</button>
-    <button class="btn btn-primary" onclick="addTxn('expense')">Add Expense</button>
-
-    <h3>Transactions</h3>
-    <div id="list"></div>
+<hr>
+<div id="list"></div>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbzZnjfQ1EqhV1knc7RMcSMGDjiZXqzrIoEN5aDP97aEmLevFLZSK42CE2-v6ZTuH6vS/exec";
+const URL = "https://script.google.com/macros/s/AKfycbxuFGKwVh0K7SaXigRGqW9774Fa12tb0kEP-vN0LCPiZbwN967DrDXrqx0LHjKIAZ2x/exec";
+const USERNAME = "Rahul";
+let transactions = [];
 
-let user=null,transactions=[],balance=0;
-
-/* ---------- HELPERS ---------- */
-const dateOnly = d => new Date(d+'T00:00:00');
-const sameDay = (a,b)=>a.toDateString()===b.toDateString();
-
-/* ---------- LOGIN ---------- */
-async function handleLogin(){
-    showLoading();
-    const u=loginUser.value,p=loginPass.value;
-    const r=await fetch(`${URL}?action=login&username=${u}&password=${p}`);
-    const res=await r.json();
-    hideLoading();
-
-    if(!res.success){alert(res.message);return}
-
-    user=res.username;
-    transactions=res.transactions||[];
-    balance=res.balance||0;
-
-    await cleanupNewMonth();
-
-    authBox.classList.add('hidden');
-    app.classList.remove('hidden');
-    userName.textContent=user;
-    refreshUI();
-}
-
-/* ---------- MONTH CLEANUP ---------- */
-async function cleanupNewMonth(){
-    const now=new Date();
-    const key=`${now.getFullYear()}-${now.getMonth()}`;
-    if(localStorage.monthKey===key) return;
-
-    transactions=[];balance=0;
-    await fetch(URL,{method:'POST',body:JSON.stringify({
-        action:'resetUserData',username:user
-    })});
-
-    localStorage.monthKey=key;
+/* ---------- LOAD ---------- */
+async function load() {
+  const r = await fetch(`${URL}?action=fetch&username=${USERNAME}`);
+  const j = await r.json();
+  transactions = j.transactions || [];
+  dashboard();
+  render();
 }
 
 /* ---------- ADD ---------- */
-async function addTxn(type){
-    const amt=+amt.value,desc=desc.value,cat=cat.value;
-    if(!amt||!desc)return alert("Invalid");
-
-    showLoading();
-    const txn={
-        id:Date.now()+Math.random().toString(36),
-        type,amount:amt,description:desc,category:cat,
-        date:new Date().toISOString().split('T')[0]
-    };
-
-    const r=await fetch(URL,{method:'POST',body:JSON.stringify({
-        action:'addTransaction',username:user,transaction:JSON.stringify(txn)
-    })});
-    const res=await r.json();
-    hideLoading();
-
-    transactions=res.transactions;
-    balance=res.balance;
-    refreshUI();
+async function add(type) {
+  await fetch(URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "add",
+      username: USERNAME,
+      type,
+      description: desc.value,
+      amount: +amt.value,
+      category: cat.value
+    })
+  });
+  amt.value = desc.value = "";
+  load();
 }
 
 /* ---------- DELETE ---------- */
-async function del(id){
-    if(!confirm("Delete?"))return;
-    showLoading();
-    const r=await fetch(URL,{method:'POST',body:JSON.stringify({
-        action:'deleteTransaction',username:user,transactionId:id
-    })});
-    const res=await r.json();
-    hideLoading();
-
-    transactions=res.transactions;
-    balance=res.balance;
-    refreshUI();
+async function del(row) {
+  await fetch(URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "delete",
+      username: USERNAME,
+      row
+    })
+  });
+  load();
 }
 
 /* ---------- DASHBOARD ---------- */
-function updateDashboard(){
-    const p=period.value,now=new Date();
-    const f=transactions.filter(t=>{
-        const d=dateOnly(t.date);
-        if(p==="today")return sameDay(d,now);
-        if(p==="month")return d.getMonth()==now.getMonth()&&d.getFullYear()==now.getFullYear();
-        return d.getFullYear()==now.getFullYear();
-    });
+function dashboard() {
+  const now = new Date();
+  let inc = 0, exp = 0;
 
-    let inc=0,exp=0;
-    f.forEach(t=>t.type==='income'?inc+=t.amount:exp+=t.amount);
+  transactions.forEach(t => {
+    const d = new Date(t.date.split("T")[0]);
+    if (d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()) {
+      t.type === "income" ? inc += t.amount : exp += t.amount;
+    }
+  });
 
-    income.textContent=`₹${inc}`;
-    expense.textContent=`₹${exp}`;
-    net.textContent=`₹${inc-exp}`;
+  income.textContent = inc;
+  expense.textContent = exp;
+  net.textContent = inc - exp;
 }
 
-/* ---------- UI ---------- */
-function refreshUI(){
-    balanceEl.textContent=`₹${balance.toFixed(2)}`;
-    updateDashboard();
-
-    list.innerHTML=transactions
-        .slice().sort((a,b)=>new Date(b.date)-new Date(a.date))
-        .map(t=>`
-        <div class="transaction ${t.type}">
-            <div>
-                ${t.type==='income'?'+':'-'}₹${t.amount}<br>
-                <small>${t.description} • ${t.category}</small>
-            </div>
-            <button class="btn btn-danger" onclick="del('${t.id}')">×</button>
-        </div>`).join('');
+/* ---------- LIST ---------- */
+function render() {
+  list.innerHTML = transactions
+    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+    .map(t => `
+      <div class="txn">
+        <span>${t.type} ₹${t.amount} (${t.category})</span>
+        <button onclick="del(${t.row})">❌</button>
+      </div>
+    `).join("");
 }
 
-function handleLogout(){
-    location.reload();
-}
-function showLoading(){loading.classList.remove('hidden')}
-function hideLoading(){loading.classList.add('hidden')}
+load();
 </script>
-
 </body>
 </html>
-
-
-
-
-
