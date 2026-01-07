@@ -7,8 +7,8 @@
 
 <style>
 body{
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#667eea,#764ba2);
+  font-family:Arial;
+  background:linear-gradient(135deg,#667eea,#764ba2);
   min-height:100vh;
   padding:20px;
 }
@@ -17,24 +17,21 @@ body{
   max-width:420px;
   margin:auto;
   padding:20px;
-  border-radius:16px;
+  border-radius:15px;
   box-shadow:0 15px 40px rgba(0,0,0,.3);
 }
-h2{text-align:center;margin-bottom:5px}
-p{text-align:center;margin-bottom:15px}
-
+h2{text-align:center}
 .dashboard{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
-  margin-bottom:15px;
+  margin:10px 0;
 }
 .box{
-  padding:14px;
-  border-radius:12px;
+  padding:12px;
+  border-radius:10px;
   color:#fff;
   text-align:center;
-  font-size:14px;
 }
 .income{background:#22c55e}
 .expense{background:#ef4444}
@@ -43,31 +40,29 @@ p{text-align:center;margin-bottom:15px}
 .balance{
   background:#2563eb;
   color:#fff;
-  padding:16px;
-  border-radius:14px;
+  padding:14px;
+  border-radius:12px;
   text-align:center;
-  margin-bottom:15px;
+  margin:12px 0;
+  font-size:22px;
 }
-.balance b{font-size:28px}
 
 input,select{
   width:100%;
-  padding:11px;
+  padding:10px;
   margin:6px 0;
-  border-radius:10px;
+  border-radius:8px;
   border:1px solid #ccc;
-  font-size:14px;
 }
 
 button{
   width:100%;
-  padding:12px;
-  margin-top:8px;
+  padding:10px;
   border:none;
-  border-radius:10px;
+  border-radius:8px;
+  margin-top:6px;
   font-weight:bold;
   cursor:pointer;
-  font-size:15px;
 }
 .add-income{background:#fde047}
 .add-expense{background:#2563eb;color:#fff}
@@ -75,69 +70,65 @@ button{
 .txn{
   background:#f9f9f9;
   padding:10px;
-  margin:8px 0;
-  border-radius:10px;
+  margin:6px 0;
+  border-radius:8px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
 }
-.txn small{color:#666}
-.del{background:#ef4444;color:#fff;padding:6px 10px;border-radius:6px}
+.del{background:#ef4444;color:#fff;border-radius:6px;padding:4px 8px}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>💰 Expense Tracker</h2>
-  <p>Welcome, <b id="user"></b></p>
+<h2>💰 Expense Tracker</h2>
+<p>Welcome, <b id="user"></b></p>
 
-  <!-- ✅ DASHBOARD (NOW VISIBLE) -->
-  <div class="dashboard">
-    <div class="box income">
-      Income<br><b id="dashIncome">₹0</b>
-    </div>
-    <div class="box expense">
-      Expense<br><b id="dashExpense">₹0</b>
-    </div>
-    <div class="box net">
-      Net<br><b id="dashNet">₹0</b>
-    </div>
-  </div>
+<!-- PERIOD SELECT -->
+<select id="period" onchange="updateDashboard()">
+  <option value="day">Today</option>
+  <option value="month" selected>This Month</option>
+  <option value="year">This Year</option>
+</select>
 
-  <!-- BALANCE -->
-  <div class="balance">
-    Current Balance<br>
-    <b id="balance">₹0</b>
-  </div>
+<!-- DASHBOARD -->
+<div class="dashboard">
+  <div class="box income">Income<br><b id="dIncome">₹0</b></div>
+  <div class="box expense">Expense<br><b id="dExpense">₹0</b></div>
+  <div class="box net">Net<br><b id="dNet">₹0</b></div>
+</div>
 
-  <!-- ✅ INPUT ORDER FIXED -->
-  <input id="amount" type="number" placeholder="Amount">
-  <input id="description" placeholder="Description">
+<div class="balance">
+  Balance<br><b id="balance">₹0</b>
+</div>
 
-  <select id="category">
-    <option>Food</option>
-    <option>Fuel</option>
-    <option>Bills</option>
-    <option>Shopping</option>
-  </select>
+<!-- ✅ AMOUNT ABOVE DESCRIPTION -->
+<input id="amount" type="number" placeholder="Amount">
+<input id="description" placeholder="Description">
 
-  <button class="add-income" onclick="addTxn('income')">💰 Add Income</button>
-  <button class="add-expense" onclick="addTxn('expense')">💸 Add Expense</button>
+<select id="category">
+  <option>Food</option>
+  <option>Fuel</option>
+  <option>Bills</option>
+  <option>Shopping</option>
+</select>
 
-  <hr>
-  <h3>Transactions</h3>
-  <div id="list"></div>
+<button class="add-income" onclick="addTxn('income')">➕ Add Income</button>
+<button class="add-expense" onclick="addTxn('expense')">➖ Add Expense</button>
+
+<hr>
+<div id="list"></div>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbzI4rxvQhIvx4K_FcxHDubC0iKNLYWjY8nUd8x8J3oWAbth7bZFJxBCPyyFSBrOiwuz/exec";
+const URL = "https://script.google.com/macros/s/AKfycbxBmiZvG66vPFrTT6W7gpcoXXN-PemcSHCkCSFLB_IEkr28t0qElMEEavWeiDTqZSNv/exec";
 const USERNAME = "Rahul";
 document.getElementById("user").textContent = USERNAME;
 
 let transactions = [];
 
-/* LOAD DATA */
+/* LOAD */
 async function load(){
   const r = await fetch(`${URL}?action=fetch&username=${USERNAME}`);
   const j = await r.json();
@@ -150,10 +141,7 @@ async function load(){
 async function addTxn(type){
   const amt = +amount.value;
   const desc = description.value.trim();
-  if(!amt || !desc){
-    alert("Enter amount and description");
-    return;
-  }
+  if(!amt || !desc) return alert("Enter amount & description");
 
   await fetch(URL,{
     method:"POST",
@@ -175,7 +163,6 @@ async function addTxn(type){
 /* DELETE */
 async function delTxn(row){
   if(!confirm("Delete this transaction?")) return;
-
   await fetch(URL,{
     method:"POST",
     body:JSON.stringify({
@@ -189,20 +176,33 @@ async function delTxn(row){
 
 /* DASHBOARD */
 function updateDashboard(){
-  let income=0, expense=0;
+  let income=0,expense=0;
   const now = new Date();
+  const period = document.getElementById("period").value;
 
   transactions.forEach(t=>{
     const d = new Date(t.date.split("T")[0]);
-    if(d.getMonth()===now.getMonth() &&
-       d.getFullYear()===now.getFullYear()){
+    let ok=false;
+
+    if(period==="day"){
+      ok = d.toDateString() === now.toDateString();
+    }
+    if(period==="month"){
+      ok = d.getMonth()===now.getMonth() &&
+           d.getFullYear()===now.getFullYear();
+    }
+    if(period==="year"){
+      ok = d.getFullYear()===now.getFullYear();
+    }
+
+    if(ok){
       t.type==="income" ? income+=t.amount : expense+=t.amount;
     }
   });
 
-  dashIncome.textContent = `₹${income}`;
-  dashExpense.textContent = `₹${expense}`;
-  dashNet.textContent = `₹${income-expense}`;
+  dIncome.textContent = `₹${income}`;
+  dExpense.textContent = `₹${expense}`;
+  dNet.textContent = `₹${income-expense}`;
   balance.textContent = `₹${income-expense}`;
 }
 
