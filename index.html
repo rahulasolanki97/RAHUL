@@ -137,6 +137,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
         .back-link {
             color: #2563eb;
@@ -156,7 +157,7 @@
         }
         .nav-tab {
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
             padding: 12px;
             border: none;
             background: #f3f4f6;
@@ -171,7 +172,7 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -183,11 +184,11 @@
         }
         .stat-card h3 {
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.85em;
             margin-bottom: 10px;
         }
         .stat-card .value {
-            font-size: 1.8em;
+            font-size: 1.6em;
             font-weight: bold;
             color: #333;
         }
@@ -220,8 +221,9 @@
             margin-bottom: 20px;
         }
         @media (max-width: 768px) {
-            .stat-card .value { font-size: 1.5em; }
-            .nav-tab { font-size: 0.9em; padding: 10px; }
+            .stat-card .value { font-size: 1.4em; }
+            .nav-tab { font-size: 0.85em; padding: 10px 5px; min-width: 90px; }
+            .header { padding: 15px; }
         }
     </style>
 </head>
@@ -244,12 +246,12 @@
         <div id="loginForm">
             <input type="text" class="input" id="loginUser" placeholder="Username or Email">
             <input type="password" class="input" id="loginPass" placeholder="Password">
-            <button class="btn btn-primary" onclick="login()">Login</button>
+            <button class="btn btn-primary" onclick="handleLogin()">Login</button>
             <div class="link">
-                <a onclick="showForgotPassword()">Forgot Password?</a>
+                <a onclick="handleShowForgotPassword()">Forgot Password?</a>
             </div>
             <div class="link">
-                Don't have an account? <a onclick="toggleAuth()">Sign Up</a>
+                Don't have an account? <a onclick="handleToggleAuth()">Sign Up</a>
             </div>
         </div>
         
@@ -258,20 +260,20 @@
             <input type="email" class="input" id="signupEmail" placeholder="Email">
             <input type="password" class="input" id="signupPass" placeholder="Password (min 6 chars)">
             <input type="password" class="input" id="signupPass2" placeholder="Confirm Password">
-            <button class="btn btn-secondary" onclick="signup()">Sign Up</button>
+            <button class="btn btn-secondary" onclick="handleSignup()">Sign Up</button>
             <div class="link">
-                Already have an account? <a onclick="toggleAuth()">Login</a>
+                Already have an account? <a onclick="handleToggleAuth()">Login</a>
             </div>
         </div>
 
         <div id="forgotPasswordForm" class="hidden">
-            <a class="back-link" onclick="showLogin()">← Back to Login</a>
+            <a class="back-link" onclick="handleShowLogin()">← Back to Login</a>
             <h2 style="margin-bottom: 15px; color: #333;">Forgot Password</h2>
             <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
                 Enter your email address to retrieve your password.
             </p>
             <input type="email" class="input" id="forgotEmail" placeholder="Email Address">
-            <button class="btn btn-primary" onclick="retrievePassword()">Get My Password</button>
+            <button class="btn btn-primary" onclick="handleRetrievePassword()">Get My Password</button>
         </div>
     </div>
 
@@ -282,13 +284,13 @@
                 <h1>💰 Expense Tracker</h1>
                 <p>Welcome, <strong id="userName"></strong></p>
             </div>
-            <button class="btn btn-danger small-btn" onclick="logout()">Logout</button>
+            <button class="btn btn-danger small-btn" onclick="handleLogout()">Logout</button>
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" id="tabDashboard" onclick="showTab('dashboard')">📊 Dashboard</button>
-            <button class="nav-tab" id="tabAdd" onclick="showTab('add')">➕ Add</button>
-            <button class="nav-tab" id="tabHistory" onclick="showTab('history')">📜 History</button>
+            <button class="nav-tab active" id="tabDashboard" onclick="handleShowTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" id="tabAdd" onclick="handleShowTab('add')">➕ Add</button>
+            <button class="nav-tab" id="tabHistory" onclick="handleShowTab('history')">📜 History</button>
         </div>
 
         <!-- DASHBOARD TAB -->
@@ -315,7 +317,7 @@
 
             <div class="chart-container">
                 <h3 style="margin-bottom: 15px;">Period Summary</h3>
-                <select class="input" id="periodSelector" onchange="updateDashboard()">
+                <select class="input" id="periodSelector" onchange="handleUpdateDashboard()">
                     <option value="today">Today</option>
                     <option value="month" selected>This Month</option>
                     <option value="year">This Year</option>
@@ -351,8 +353,8 @@
                     <div class="balance-amount" id="addBalance">₹0.00</div>
                 </div>
 
-                <input type="text" class="input" id="desc" placeholder="Description">
                 <input type="number" class="input" id="amt" placeholder="Amount">
+                <input type="text" class="input" id="desc" placeholder="Description">
                 <select class="input" id="cat">
                     <option>Food</option>
                     <option>Fuel</option>
@@ -368,8 +370,8 @@
                     <option>Other</option>
                 </select>
 
-                <button class="btn btn-secondary" onclick="add('income')">💰 Add Income</button>
-                <button class="btn btn-primary" onclick="add('expense')">💸 Add Expense</button>
+                <button class="btn btn-secondary" onclick="handleAdd('income')">💰 Add Income</button>
+                <button class="btn btn-primary" onclick="handleAdd('expense')">💸 Add Expense</button>
             </div>
         </div>
 
@@ -383,7 +385,7 @@
     </div>
 
     <script>
-        const URL = 'https://script.google.com/macros/s/AKfycbxMIWp8C6Bi4orSSMExzpfYpy2NXfknYvyk_udH3YVGx2QJiZEGluRp3F3PpE-IqSPP/exec';
+        const URL = 'https://script.google.com/macros/s/AKfycbx3NEU6GWuBLmhRKC6N_PbVqip52ROOS9TdwIadgJMCfWhS0Hsm1tCxgYSYnsP9kQli/exec';
 
         let user = null, pass = null, transactions = [], balance = 0, currentTab = 'dashboard';
 
@@ -410,51 +412,48 @@
             setTimeout(() => el.style.display = 'none', 5000);
         }
 
-        function showTab(tab) {
+        function handleShowTab(tab) {
             currentTab = tab;
             
-            // Update active tab button
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
             
-            // Hide all tabs
             hide('dashboardTab'); 
             hide('addTab'); 
             hide('historyTab');
             
-            // Show selected tab
             if (tab === 'dashboard') { 
                 show('dashboardTab'); 
-                updateDashboard(); 
+                handleUpdateDashboard(); 
             } else if (tab === 'add') {
                 show('addTab');
             } else if (tab === 'history') { 
                 show('historyTab'); 
-                updateHistory(); 
+                handleUpdateHistory(); 
             }
         }
 
-        function toggleAuth() {
+        function handleToggleAuth() {
             document.getElementById('loginForm').classList.toggle('hidden');
             document.getElementById('signupForm').classList.toggle('hidden');
             document.getElementById('error').style.display = 'none';
             document.getElementById('success').style.display = 'none';
         }
 
-        function showLogin() {
+        function handleShowLogin() {
             hide('forgotPasswordForm'); 
             show('loginForm');
             document.getElementById('error').style.display = 'none';
         }
 
-        function showForgotPassword() {
+        function handleShowForgotPassword() {
             hide('loginForm'); 
             hide('signupForm'); 
             show('forgotPasswordForm');
             document.getElementById('error').style.display = 'none';
         }
 
-        async function retrievePassword() {
+        async function handleRetrievePassword() {
             const email = document.getElementById('forgotEmail').value.trim();
             if (!email) { showError('Please enter email'); return; }
             show('loading');
@@ -469,7 +468,7 @@
             } catch (e) { hide('loading'); showError('Error: ' + e.message); }
         }
 
-        async function signup() {
+        async function handleSignup() {
             const username = document.getElementById('signupUser').value.trim();
             const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPass').value;
@@ -491,12 +490,12 @@
                     document.getElementById('signupEmail').value = '';
                     document.getElementById('signupPass').value = '';
                     document.getElementById('signupPass2').value = '';
-                    setTimeout(toggleAuth, 2000);
+                    setTimeout(handleToggleAuth, 2000);
                 } else showError(result.message);
             } catch (e) { hide('loading'); showError('Error: ' + e.message); }
         }
 
-        async function login() {
+        async function handleLogin() {
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value;
             if (!username || !password) { showError('Enter credentials'); return; }
@@ -511,7 +510,6 @@
                     user = result.username;
                     pass = password;
                     
-                    // Parse transactions - ensure they're valid
                     if (typeof result.transactions === 'string') {
                         try {
                             transactions = JSON.parse(result.transactions);
@@ -522,7 +520,6 @@
                         transactions = result.transactions || [];
                     }
                     
-                    // Ensure transactions is an array
                     if (!Array.isArray(transactions)) {
                         transactions = [];
                     }
@@ -532,12 +529,12 @@
                     localStorage.setItem('user', user);
                     localStorage.setItem('pass', pass);
 
-                    await checkAndCleanupOldData();
+                    await handleCheckAndCleanupOldData();
 
                     hide('authBox'); 
                     show('app');
                     document.getElementById('userName').textContent = user;
-                    updateAllUI();
+                    handleUpdateAllUI();
                 } else showError(result.message);
             } catch (e) { 
                 hide('loading'); 
@@ -546,7 +543,7 @@
             }
         }
 
-        async function checkAndCleanupOldData() {
+        async function handleCheckAndCleanupOldData() {
             const lastCleanup = localStorage.getItem('lastCleanup');
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -585,20 +582,20 @@
             }
         }
 
-        function logout() {
+        function handleLogout() {
             localStorage.clear();
             user = null; pass = null; transactions = []; balance = 0;
-            hide('app'); show('authBox'); showLogin();
+            hide('app'); show('authBox'); handleShowLogin();
             document.getElementById('loginUser').value = '';
             document.getElementById('loginPass').value = '';
         }
 
-        async function add(type) {
+        async function handleAdd(type) {
             const desc = document.getElementById('desc').value.trim();
             const amt = parseFloat(document.getElementById('amt').value);
             const cat = document.getElementById('cat').value;
 
-            if (!desc || !amt || amt <= 0) { alert('Enter description and amount'); return; }
+            if (!desc || !amt || amt <= 0) { alert('Enter amount and description'); return; }
 
             show('loading');
             try {
@@ -608,7 +605,7 @@
                     amount: amt, 
                     category: cat,
                     date: new Date().toISOString(),
-                    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9) // More unique ID
+                    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
                 };
 
                 const response = await fetch(URL, {
@@ -624,7 +621,6 @@
                 hide('loading');
 
                 if (result.success) {
-                    // Parse transactions from response
                     if (typeof result.transactions === 'string') {
                         transactions = JSON.parse(result.transactions);
                     } else {
@@ -634,7 +630,7 @@
                     
                     document.getElementById('desc').value = '';
                     document.getElementById('amt').value = '';
-                    updateAllUI();
+                    handleUpdateAllUI();
                     showSuccess(type === 'income' ? 'Income added!' : 'Expense added!');
                 } else {
                     alert('Failed to add transaction');
@@ -646,10 +642,9 @@
             }
         }
 
-        async function del(transactionId) {
+        async function handleDelete(transactionId) {
             if (!confirm('Delete this transaction?')) return;
             
-            console.log('Deleting transaction ID:', transactionId);
             show('loading');
             
             try {
@@ -666,7 +661,6 @@
                 hide('loading');
 
                 if (result.success) {
-                    // Parse transactions from response
                     if (typeof result.transactions === 'string') {
                         transactions = JSON.parse(result.transactions);
                     } else {
@@ -674,10 +668,10 @@
                     }
                     balance = parseFloat(result.balance);
                     
-                    updateAllUI();
+                    handleUpdateAllUI();
                     showSuccess('Transaction deleted');
                 } else {
-                    alert('Failed to delete: ' + result.message);
+                    alert('Failed to delete: ' + (result.message || 'Unknown error'));
                 }
             } catch (e) { 
                 hide('loading'); 
@@ -686,14 +680,14 @@
             }
         }
 
-        function updateAllUI() {
+        function handleUpdateAllUI() {
             document.getElementById('dashboardBalance').textContent = `₹${balance.toFixed(2)}`;
             document.getElementById('addBalance').textContent = `₹${balance.toFixed(2)}`;
-            if (currentTab === 'dashboard') updateDashboard();
-            if (currentTab === 'history') updateHistory();
+            if (currentTab === 'dashboard') handleUpdateDashboard();
+            if (currentTab === 'history') handleUpdateHistory();
         }
 
-        function updateDashboard() {
+        function handleUpdateDashboard() {
             const period = document.getElementById('periodSelector').value;
             const now = new Date();
             
@@ -763,7 +757,7 @@
             }
         }
 
-        function updateHistory() {
+        function handleUpdateHistory() {
             const list = document.getElementById('list');
             if (transactions.length === 0) {
                 list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No transactions yet</p>';
@@ -773,14 +767,14 @@
             list.innerHTML = [...transactions].reverse().map(t => `
                 <div class="transaction ${t.type}">
                     <div>
+                        <div class="amount ${t.type}" style="font-size: 1.3em; margin-bottom: 5px;">
+                            ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}
+                        </div>
                         <strong>${t.description}</strong><br>
                         <small style="color: #666">${t.category} • ${new Date(t.date).toLocaleDateString()}</small>
                     </div>
-                    <div style="display: flex; align-items: center;">
-                        <span class="amount ${t.type}">
-                            ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}
-                        </span>
-                        <button class="btn btn-danger small-btn" onclick="del('${t.id}')">×</button>
+                    <div>
+                        <button class="btn btn-danger small-btn" onclick="handleDelete('${t.id}')">×</button>
                     </div>
                 </div>
             `).join('');
