@@ -28,10 +28,9 @@
             padding: 5px 12px;
             border-radius: 15px;
             font-size: 0.85em;
-            display: inline-block;
+            display: block;
             margin: 10px auto;
             text-align: center;
-            width: 100%;
         }
         .alert {
             padding: 10px;
@@ -60,7 +59,6 @@
             cursor: pointer;
             margin: 8px 0;
         }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background: #2563eb; color: white; }
         .btn-secondary { background: #ffd93d; color: #333; }
         .btn-danger { background: #ef4444; color: white; }
@@ -139,13 +137,6 @@
             align-items: center;
             flex-wrap: wrap;
         }
-        .back-link {
-            color: #2563eb;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -164,7 +155,6 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s;
         }
         .nav-tab.active {
             background: #2563eb;
@@ -212,18 +202,12 @@
         .progress-fill {
             height: 100%;
             background: #ef4444;
-            transition: width 0.3s;
         }
         .chart-container {
             background: white;
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
-        }
-        @media (max-width: 768px) {
-            .stat-card .value { font-size: 1.4em; }
-            .nav-tab { font-size: 0.85em; padding: 10px 5px; min-width: 90px; }
-            .header { padding: 15px; }
         }
     </style>
 </head>
@@ -234,7 +218,7 @@
         </div>
     </div>
 
-    <!-- AUTH BOX -->
+    <!-- LOGIN -->
     <div class="box" id="authBox">
         <h1>💰 Expense Tracker</h1>
         <p class="subtitle">Track your finances</p>
@@ -246,34 +230,31 @@
         <div id="loginForm">
             <input type="text" class="input" id="loginUser" placeholder="Username or Email">
             <input type="password" class="input" id="loginPass" placeholder="Password">
-            <button class="btn btn-primary" onclick="handleLogin()">Login</button>
+            <button class="btn btn-primary" id="loginBtn">Login</button>
             <div class="link">
-                <a onclick="handleShowForgotPassword()">Forgot Password?</a>
+                <a id="forgotLink">Forgot Password?</a>
             </div>
             <div class="link">
-                Don't have an account? <a onclick="handleToggleAuth()">Sign Up</a>
+                Don't have an account? <a id="signupLink">Sign Up</a>
             </div>
         </div>
         
         <div id="signupForm" class="hidden">
-            <input type="text" class="input" id="signupUser" placeholder="Username (min 3 chars)">
+            <input type="text" class="input" id="signupUser" placeholder="Username">
             <input type="email" class="input" id="signupEmail" placeholder="Email">
-            <input type="password" class="input" id="signupPass" placeholder="Password (min 6 chars)">
+            <input type="password" class="input" id="signupPass" placeholder="Password">
             <input type="password" class="input" id="signupPass2" placeholder="Confirm Password">
-            <button class="btn btn-secondary" onclick="handleSignup()">Sign Up</button>
+            <button class="btn btn-secondary" id="signupBtn">Sign Up</button>
             <div class="link">
-                Already have an account? <a onclick="handleToggleAuth()">Login</a>
+                Already have an account? <a id="loginLink">Login</a>
             </div>
         </div>
 
         <div id="forgotPasswordForm" class="hidden">
-            <a class="back-link" onclick="handleShowLogin()">← Back to Login</a>
+            <a class="link" id="backToLogin" style="display: block; margin-bottom: 15px;">← Back to Login</a>
             <h2 style="margin-bottom: 15px; color: #333;">Forgot Password</h2>
-            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
-                Enter your email address to retrieve your password.
-            </p>
             <input type="email" class="input" id="forgotEmail" placeholder="Email Address">
-            <button class="btn btn-primary" onclick="handleRetrievePassword()">Get My Password</button>
+            <button class="btn btn-primary" id="retrieveBtn">Get My Password</button>
         </div>
     </div>
 
@@ -284,16 +265,16 @@
                 <h1>💰 Expense Tracker</h1>
                 <p>Welcome, <strong id="userName"></strong></p>
             </div>
-            <button class="btn btn-danger small-btn" onclick="handleLogout()">Logout</button>
+            <button class="btn btn-danger small-btn" id="logoutBtn">Logout</button>
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" id="tabDashboard" onclick="handleShowTab('dashboard')">📊 Dashboard</button>
-            <button class="nav-tab" id="tabAdd" onclick="handleShowTab('add')">➕ Add</button>
-            <button class="nav-tab" id="tabHistory" onclick="handleShowTab('history')">📜 History</button>
+            <button class="nav-tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="nav-tab" data-tab="add">➕ Add</button>
+            <button class="nav-tab" data-tab="history">📜 History</button>
         </div>
 
-        <!-- DASHBOARD TAB -->
+        <!-- DASHBOARD -->
         <div id="dashboardTab">
             <div class="balance">
                 <div>Current Balance</div>
@@ -317,7 +298,7 @@
 
             <div class="chart-container">
                 <h3 style="margin-bottom: 15px;">Period Summary</h3>
-                <select class="input" id="periodSelector" onchange="handleUpdateDashboard()">
+                <select class="input" id="periodSelector">
                     <option value="today">Today</option>
                     <option value="month" selected>This Month</option>
                     <option value="year">This Year</option>
@@ -345,7 +326,7 @@
             </div>
         </div>
 
-        <!-- ADD TRANSACTION TAB -->
+        <!-- ADD -->
         <div id="addTab" class="hidden">
             <div class="box" style="margin: 0;">
                 <div class="balance">
@@ -370,12 +351,12 @@
                     <option>Other</option>
                 </select>
 
-                <button class="btn btn-secondary" onclick="handleAdd('income')">💰 Add Income</button>
-                <button class="btn btn-primary" onclick="handleAdd('expense')">💸 Add Expense</button>
+                <button class="btn btn-secondary" id="addIncomeBtn">💰 Add Income</button>
+                <button class="btn btn-primary" id="addExpenseBtn">💸 Add Expense</button>
             </div>
         </div>
 
-        <!-- HISTORY TAB -->
+        <!-- HISTORY -->
         <div id="historyTab" class="hidden">
             <div class="box" style="margin: 0;">
                 <h3 style="margin-bottom: 10px;">All Transactions</h3>
@@ -385,14 +366,20 @@
     </div>
 
     <script>
-        const URL = 'https://script.google.com/macros/s/AKfycbxMIWp8C6Bi4orSSMExzpfYpy2NXfknYvyk_udH3YVGx2QJiZEGluRp3F3PpE-IqSPP/exec';
+        const URL = 'https://script.google.com/macros/s/AKfycbx3NEU6GWuBLmhRKC6N_PbVqip52ROOS9TdwIadgJMCfWhS0Hsm1tCxgYSYnsP9kQli/exec';
 
-        let user = null, pass = null, transactions = [], balance = 0, currentTab = 'dashboard';
+        let user = null;
+        let pass = null;
+        let transactions = [];
+        let balance = 0;
+        let currentTab = 'dashboard';
 
+        // Helper functions
         function show(id) { 
             const el = document.getElementById(id);
             if(el) el.classList.remove('hidden'); 
         }
+        
         function hide(id) { 
             const el = document.getElementById(id);
             if(el) el.classList.add('hidden'); 
@@ -412,93 +399,108 @@
             setTimeout(() => el.style.display = 'none', 5000);
         }
 
-        function handleShowTab(tab) {
-            currentTab = tab;
-            
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-            
-            hide('dashboardTab'); 
-            hide('addTab'); 
-            hide('historyTab');
-            
-            if (tab === 'dashboard') { 
-                show('dashboardTab'); 
-                handleUpdateDashboard(); 
-            } else if (tab === 'add') {
-                show('addTab');
-            } else if (tab === 'history') { 
-                show('historyTab'); 
-                handleUpdateHistory(); 
-            }
-        }
+        // Auth functions
+        document.getElementById('signupLink').addEventListener('click', () => {
+            hide('loginForm');
+            show('signupForm');
+        });
 
-        function handleToggleAuth() {
-            document.getElementById('loginForm').classList.toggle('hidden');
-            document.getElementById('signupForm').classList.toggle('hidden');
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('success').style.display = 'none';
-        }
-
-        function handleShowLogin() {
-            hide('forgotPasswordForm'); 
+        document.getElementById('loginLink').addEventListener('click', () => {
+            hide('signupForm');
             show('loginForm');
-            document.getElementById('error').style.display = 'none';
-        }
+        });
 
-        function handleShowForgotPassword() {
-            hide('loginForm'); 
-            hide('signupForm'); 
+        document.getElementById('forgotLink').addEventListener('click', () => {
+            hide('loginForm');
             show('forgotPasswordForm');
-            document.getElementById('error').style.display = 'none';
-        }
+        });
 
-        async function handleRetrievePassword() {
-            const email = document.getElementById('forgotEmail').value.trim();
-            if (!email) { showError('Please enter email'); return; }
-            show('loading');
-            try {
-                const response = await fetch(`${URL}?action=getPassword&email=${encodeURIComponent(email)}`);
-                const result = await response.json();
-                hide('loading');
-                if (result.success) {
-                    showSuccess(`Your password is: ${result.password}`);
-                    document.getElementById('forgotEmail').value = '';
-                } else showError(result.message);
-            } catch (e) { hide('loading'); showError('Error: ' + e.message); }
-        }
+        document.getElementById('backToLogin').addEventListener('click', () => {
+            hide('forgotPasswordForm');
+            show('loginForm');
+        });
 
-        async function handleSignup() {
+        document.getElementById('signupBtn').addEventListener('click', async () => {
             const username = document.getElementById('signupUser').value.trim();
             const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPass').value;
             const confirm = document.getElementById('signupPass2').value;
 
-            if (!username || !email || !password) { showError('Fill all fields'); return; }
-            if (username.length < 3) { showError('Username min 3 chars'); return; }
-            if (password.length < 6) { showError('Password min 6 chars'); return; }
-            if (password !== confirm) { showError('Passwords do not match'); return; }
+            if (!username || !email || !password) {
+                showError('Fill all fields');
+                return;
+            }
+            if (username.length < 3) {
+                showError('Username min 3 chars');
+                return;
+            }
+            if (password.length < 6) {
+                showError('Password min 6 chars');
+                return;
+            }
+            if (password !== confirm) {
+                showError('Passwords do not match');
+                return;
+            }
 
             show('loading');
             try {
                 const response = await fetch(`${URL}?action=signup&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`);
                 const result = await response.json();
                 hide('loading');
+                
                 if (result.success) {
                     showSuccess(result.message);
                     document.getElementById('signupUser').value = '';
                     document.getElementById('signupEmail').value = '';
                     document.getElementById('signupPass').value = '';
                     document.getElementById('signupPass2').value = '';
-                    setTimeout(handleToggleAuth, 2000);
-                } else showError(result.message);
-            } catch (e) { hide('loading'); showError('Error: ' + e.message); }
-        }
+                    setTimeout(() => {
+                        hide('signupForm');
+                        show('loginForm');
+                    }, 2000);
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                showError('Error: ' + e.message);
+            }
+        });
 
-        async function handleLogin() {
+        document.getElementById('retrieveBtn').addEventListener('click', async () => {
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) {
+                showError('Please enter email');
+                return;
+            }
+            
+            show('loading');
+            try {
+                const response = await fetch(`${URL}?action=getPassword&email=${encodeURIComponent(email)}`);
+                const result = await response.json();
+                hide('loading');
+                
+                if (result.success) {
+                    showSuccess(`Your password is: ${result.password}`);
+                    document.getElementById('forgotEmail').value = '';
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                showError('Error: ' + e.message);
+            }
+        });
+
+        document.getElementById('loginBtn').addEventListener('click', async () => {
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value;
-            if (!username || !password) { showError('Enter credentials'); return; }
+            
+            if (!username || !password) {
+                showError('Enter credentials');
+                return;
+            }
 
             show('loading');
             try {
@@ -511,11 +513,7 @@
                     pass = password;
                     
                     if (typeof result.transactions === 'string') {
-                        try {
-                            transactions = JSON.parse(result.transactions);
-                        } catch(e) {
-                            transactions = [];
-                        }
+                        transactions = JSON.parse(result.transactions);
                     } else {
                         transactions = result.transactions || [];
                     }
@@ -529,80 +527,79 @@
                     localStorage.setItem('user', user);
                     localStorage.setItem('pass', pass);
 
-                    await handleCheckAndCleanupOldData();
-
-                    hide('authBox'); 
+                    hide('authBox');
                     show('app');
                     document.getElementById('userName').textContent = user;
-                    handleUpdateAllUI();
-                } else showError(result.message);
-            } catch (e) { 
-                hide('loading'); 
-                console.error('Login error:', e);
-                showError('Error: ' + e.message); 
+                    updateAllUI();
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                showError('Error: ' + e.message);
             }
-        }
+        });
 
-        async function handleCheckAndCleanupOldData() {
-            const lastCleanup = localStorage.getItem('lastCleanup');
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
-            if (lastCleanup) {
-                const lastDate = new Date(lastCleanup);
-                if (lastDate.getMonth() === currentMonth && lastDate.getFullYear() === currentYear) return;
-            }
-
-            const filteredTransactions = transactions.filter(t => {
-                const tDate = new Date(t.date);
-                return tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
-            });
-
-            if (filteredTransactions.length !== transactions.length) {
-                transactions = filteredTransactions;
-                balance = 0;
-                transactions.forEach(t => {
-                    if (t.type === 'income') balance += parseFloat(t.amount);
-                    else balance -= parseFloat(t.amount);
-                });
-
-                try {
-                    await fetch(URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'updateUserData',
-                            username: user,
-                            transactions: JSON.stringify(transactions),
-                            balance: balance
-                        })
-                    });
-                    localStorage.setItem('lastCleanup', now.toISOString());
-                } catch (e) { console.error('Cleanup error:', e); }
-            }
-        }
-
-        function handleLogout() {
+        document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.clear();
-            user = null; pass = null; transactions = []; balance = 0;
-            hide('app'); show('authBox'); handleShowLogin();
+            user = null;
+            pass = null;
+            transactions = [];
+            balance = 0;
+            hide('app');
+            show('authBox');
+            show('loginForm');
+            hide('signupForm');
+            hide('forgotPasswordForm');
             document.getElementById('loginUser').value = '';
             document.getElementById('loginPass').value = '';
-        }
+        });
 
-        async function handleAdd(type) {
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('data-tab');
+                currentTab = tabName;
+                
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                hide('dashboardTab');
+                hide('addTab');
+                hide('historyTab');
+                
+                if (tabName === 'dashboard') {
+                    show('dashboardTab');
+                    updateDashboard();
+                } else if (tabName === 'add') {
+                    show('addTab');
+                } else if (tabName === 'history') {
+                    show('historyTab');
+                    updateHistory();
+                }
+            });
+        });
+
+        // Add transaction
+        document.getElementById('addIncomeBtn').addEventListener('click', () => addTransaction('income'));
+        document.getElementById('addExpenseBtn').addEventListener('click', () => addTransaction('expense'));
+
+        async function addTransaction(type) {
             const desc = document.getElementById('desc').value.trim();
             const amt = parseFloat(document.getElementById('amt').value);
             const cat = document.getElementById('cat').value;
 
-            if (!desc || !amt || amt <= 0) { alert('Enter amount and description'); return; }
+            if (!desc || !amt || amt <= 0) {
+                alert('Enter amount and description');
+                return;
+            }
 
             show('loading');
             try {
                 const transaction = {
-                    type, 
-                    description: desc, 
-                    amount: amt, 
+                    type,
+                    description: desc,
+                    amount: amt,
                     category: cat,
                     date: new Date().toISOString(),
                     id: Date.now() + '-' + Math.random().toString(36).substr(2, 9)
@@ -630,19 +627,19 @@
                     
                     document.getElementById('desc').value = '';
                     document.getElementById('amt').value = '';
-                    handleUpdateAllUI();
+                    updateAllUI();
                     showSuccess(type === 'income' ? 'Income added!' : 'Expense added!');
                 } else {
                     alert('Failed to add transaction');
                 }
-            } catch (e) { 
-                hide('loading'); 
-                console.error('Add error:', e);
-                alert('Error: ' + e.message); 
+            } catch (e) {
+                hide('loading');
+                alert('Error: ' + e.message);
             }
         }
 
-        async function handleDelete(transactionId) {
+        // Delete transaction
+        window.deleteTransaction = async function(transactionId) {
             if (!confirm('Delete this transaction?')) return;
             
             show('loading');
@@ -668,26 +665,29 @@
                     }
                     balance = parseFloat(result.balance);
                     
-                    handleUpdateAllUI();
+                    updateAllUI();
                     showSuccess('Transaction deleted');
                 } else {
-                    alert('Failed to delete: ' + (result.message || 'Unknown error'));
+                    alert('Failed to delete');
                 }
-            } catch (e) { 
-                hide('loading'); 
-                console.error('Delete error:', e);
-                alert('Error: ' + e.message); 
+            } catch (e) {
+                hide('loading');
+                alert('Error: ' + e.message);
             }
-        }
+        };
 
-        function handleUpdateAllUI() {
+        // Period selector
+        document.getElementById('periodSelector').addEventListener('change', updateDashboard);
+
+        // Update UI functions
+        function updateAllUI() {
             document.getElementById('dashboardBalance').textContent = `₹${balance.toFixed(2)}`;
             document.getElementById('addBalance').textContent = `₹${balance.toFixed(2)}`;
-            if (currentTab === 'dashboard') handleUpdateDashboard();
-            if (currentTab === 'history') handleUpdateHistory();
+            if (currentTab === 'dashboard') updateDashboard();
+            if (currentTab === 'history') updateHistory();
         }
 
-        function handleUpdateDashboard() {
+        function updateDashboard() {
             const period = document.getElementById('periodSelector').value;
             const now = new Date();
             
@@ -757,7 +757,7 @@
             }
         }
 
-        function handleUpdateHistory() {
+        function updateHistory() {
             const list = document.getElementById('list');
             if (transactions.length === 0) {
                 list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No transactions yet</p>';
@@ -774,12 +774,13 @@
                         <small style="color: #666">${t.category} • ${new Date(t.date).toLocaleDateString()}</small>
                     </div>
                     <div>
-                        <button class="btn btn-danger small-btn" onclick="handleDelete('${t.id}')">×</button>
+                        <button class="btn btn-danger small-btn" onclick="deleteTransaction('${t.id}')">×</button>
                     </div>
                 </div>
             `).join('');
         }
 
+        // Auto-load saved credentials
         window.onload = () => {
             const savedUser = localStorage.getItem('user');
             const savedPass = localStorage.getItem('pass');
@@ -790,5 +791,4 @@
         };
     </script>
 </body>
-</html
-
+</html>
