@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .box {
+            max-width: 500px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+        .badge {
+            background: #10b981;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            display: inline-block;
+            margin: 10px auto;
+            text-align: center;
+            width: 100%;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        .alert.error { background: #fee; color: #c33; border-left: 4px solid #c33; }
+        .alert.success { background: #efe; color: #3a3; border-left: 4px solid #3a3; }
+        .input { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 8px 0; 
+            border: 2px solid #ddd; 
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        .input:focus { outline: none; border-color: #2563eb; }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-secondary { background: #ffd93d; color: #333; }
+        .btn-danger { background: #ef4444; color: white; }
+        .link { 
+            text-align: center; 
+            margin: 15px 0; 
+            color: #666; 
+        }
+        .link a { 
+            color: #2563eb; 
+            cursor: pointer; 
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .balance {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .balance-amount { font-size: 2.5em; font-weight: bold; }
+        .transaction {
+            background: #f9f9f9;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transaction.income { background: #fffbeb; border-left: 4px solid #ffd93d; }
+        .transaction.expense { background: #fef2f2; border-left: 4px solid #ef4444; }
+        .amount { font-weight: bold; font-size: 1.2em; }
+        .amount.income { color: #16a34a; }
+        .amount.expense { color: #ef4444; }
+        .small-btn {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .hidden { display: none !important; }
+        .loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .back-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading hidden" id="loading">
+        <div style="background: white; padding: 30px; border-radius: 15px;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- LOGIN/SIGNUP -->
+    <div class="box" id="authBox">
+        <h1>💰 Expense Tracker</h1>
+        <p class="subtitle">Track your finances</p>
+        <div class="badge">☁️ Cloud Synced</div>
+        
+        <div class="alert error" id="error"></div>
+        <div class="alert success" id="success"></div>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <input type="text" class="input" id="loginUser" placeholder="Username or Email">
+            <input type="password" class="input" id="loginPass" placeholder="Password">
+            <button class="btn btn-primary" onclick="login()">Login</button>
+            <div class="link">
+                <a onclick="showForgotPassword()">Forgot Password?</a>
+            </div>
+            <div class="link">
+                Don't have an account? <a onclick="toggleAuth()">Sign Up</a>
+            </div>
+        </div>
+        
+        <!-- Signup Form -->
+        <div id="signupForm" class="hidden">
+            <input type="text" class="input" id="signupUser" placeholder="Username (min 3 chars)">
+            <input type="email" class="input" id="signupEmail" placeholder="Email">
+            <input type="password" class="input" id="signupPass" placeholder="Password (min 6 chars)">
+            <input type="password" class="input" id="signupPass2" placeholder="Confirm Password">
+            <button class="btn btn-secondary" onclick="signup()">Sign Up</button>
+            <div class="link">
+                Already have an account? <a onclick="toggleAuth()">Login</a>
+            </div>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div id="forgotPasswordForm" class="hidden">
+            <a class="back-link" onclick="showLogin()">← Back to Login</a>
+            <h2 style="margin-bottom: 15px; color: #333;">Forgot Password</h2>
+            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">
+                Enter your email address to retrieve your password.
+            </p>
+            <input type="email" class="input" id="forgotEmail" placeholder="Email Address">
+            <button class="btn btn-primary" onclick="retrievePassword()">Get My Password</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="container hidden" id="app">
+        <div class="header">
+            <div>
+                <h1>💰 Expense Tracker</h1>
+                <p>Welcome, <strong id="userName"></strong></p>
+            </div>
+            <button class="btn btn-danger small-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="box">
+            <div class="balance">
+                <div>Current Balance</div>
+                <div class="balance-amount" id="balance">₹0.00</div>
+            </div>
+
+            <input type="text" class="input" id="desc" placeholder="Description">
+            <input type="number" class="input" id="amt" placeholder="Amount">
+            <select class="input" id="cat">
+                <option>Food</option>
+                <option>Fuel</option>
+                <option>Recharge</option>
+                <option>Donations</option>
+                <option>Emi</option>
+                <option>Cash expenses</option>
+                <option>Shopping</option>
+                <option>Bills</option>
+                <option>Entertainment</option>
+                <option>Health</option>
+                <option>Salary</option>
+                <option>Other</option>
+            </select>
+
+            <button class="btn btn-secondary" onclick="add('income')">💰 Add Income</button>
+            <button class="btn btn-primary" onclick="add('expense')">💸 Add Expense</button>
+
+            <h3 style="margin-top: 30px; margin-bottom: 10px;">Transactions</h3>
+            <div id="list"></div>
+        </div>
+    </div>
+
+    <script>
+        // ✅ UPDATED GOOGLE APPS SCRIPT URL
+        const URL = 'https://script.google.com/macros/s/AKfycbx3NEU6GWuBLmhRKC6N_PbVqip52ROOS9TdwIadgJMCfWhS0Hsm1tCxgYSYnsP9kQli/exec';
+
+        let user = null;
+        let pass = null;
+        let transactions = [];
+        let balance = 0;
+        let tempResetUsername = '';
+
+        function show(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function showError(msg) {
+            const el = document.getElementById('error');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function toggleAuth() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('signupForm').classList.toggle('hidden');
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+
+        function showLogin() {
+            hide('forgotPasswordForm');
+            hide('resetPasswordForm');
+            show('loginForm');
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+
+        function showForgotPassword() {
+            hide('loginForm');
+            hide('signupForm');
+            show('forgotPasswordForm');
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+
+        async function retrievePassword() {
+            const email = document.getElementById('forgotEmail').value.trim();
+
+            if (!email) {
+                showError('Please enter your email address');
+                return;
+            }
+
+            show('loading');
+
+            try {
+                const forgotUrl = `${URL}?action=getPassword&email=${encodeURIComponent(email)}`;
+                
+                const response = await fetch(forgotUrl, {
+                    redirect: 'follow'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                const result = JSON.parse(text);
+
+                hide('loading');
+
+                if (result.success) {
+                    showSuccess(`Your password is: ${result.password}`);
+                    document.getElementById('forgotEmail').value = '';
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                console.error('Retrieve password error:', e);
+                showError('Error: ' + e.message);
+            }
+        }
+
+        async function signup() {
+            const username = document.getElementById('signupUser').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPass').value;
+            const confirm = document.getElementById('signupPass2').value;
+
+            if (!username || !email || !password) {
+                showError('Please fill all fields');
+                return;
+            }
+            if (username.length < 3) {
+                showError('Username must be at least 3 characters');
+                return;
+            }
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+            if (password !== confirm) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            show('loading');
+
+            try {
+                console.log('Attempting signup...');
+                console.log('Using URL:', URL);
+                const signupUrl = `${URL}?action=signup&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+                console.log('Full signup URL:', signupUrl);
+                
+                const response = await fetch(signupUrl, {
+                    redirect: 'follow'
+                });
+                console.log('Response status:', response.status);
+                console.log('Response OK:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                console.log('Response text:', text);
+                
+                const result = JSON.parse(text);
+
+                hide('loading');
+
+                if (result.success) {
+                    showSuccess(result.message);
+                    document.getElementById('signupUser').value = '';
+                    document.getElementById('signupEmail').value = '';
+                    document.getElementById('signupPass').value = '';
+                    document.getElementById('signupPass2').value = '';
+                    setTimeout(toggleAuth, 2000);
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                console.error('Signup error:', e);
+                console.error('Error details:', e.message);
+                showError('Connection error. Please check: 1) Script URL is correct 2) Script is deployed as "Anyone" 3) Check browser console (F12) for details');
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value;
+
+            if (!username || !password) {
+                showError('Please enter username and password');
+                return;
+            }
+
+            show('loading');
+
+            try {
+                console.log('Attempting login...');
+                const loginUrl = `${URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+                
+                const response = await fetch(loginUrl);
+                console.log('Response status:', response.status);
+                
+                const text = await response.text();
+                console.log('Response:', text);
+                
+                const result = JSON.parse(text);
+
+                hide('loading');
+
+                if (result.success) {
+                    user = result.username;
+                    pass = password;
+                    transactions = result.transactions || [];
+                    balance = result.balance || 0;
+
+                    localStorage.setItem('user', user);
+                    localStorage.setItem('pass', pass);
+
+                    hide('authBox');
+                    show('app');
+                    document.getElementById('userName').textContent = user;
+                    updateUI();
+                } else {
+                    showError(result.message);
+                }
+            } catch (e) {
+                hide('loading');
+                console.error('Login error:', e);
+                showError('Error: ' + e.message);
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            user = null;
+            pass = null;
+            transactions = [];
+            balance = 0;
+            hide('app');
+            show('authBox');
+            showLogin();
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+        }
+
+        async function add(type) {
+            const desc = document.getElementById('desc').value.trim();
+            const amt = parseFloat(document.getElementById('amt').value);
+            const cat = document.getElementById('cat').value;
+
+            if (!desc || !amt || amt <= 0) {
+                alert('Please enter description and amount');
+                return;
+            }
+
+            show('loading');
+
+            try {
+                const transaction = {
+                    type: type,
+                    description: desc,
+                    amount: amt,
+                    category: cat,
+                    date: new Date().toISOString()
+                };
+
+                const response = await fetch(URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'addTransaction',
+                        username: user,
+                        transaction: JSON.stringify(transaction)
+                    })
+                });
+
+                const result = await response.json();
+                hide('loading');
+
+                if (result.success) {
+                    transactions = result.transactions;
+                    balance = result.balance;
+                    document.getElementById('desc').value = '';
+                    document.getElementById('amt').value = '';
+                    updateUI();
+                    showSuccess(type === 'income' ? 'Income added!' : 'Expense added!');
+                }
+            } catch (e) {
+                hide('loading');
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function del(index) {
+            if (!confirm('Delete this transaction?')) return;
+
+            show('loading');
+
+            try {
+                const response = await fetch(URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'deleteTransaction',
+                        username: user,
+                        index: index
+                    })
+                });
+
+                const result = await response.json();
+                hide('loading');
+
+                if (result.success) {
+                    transactions = result.transactions;
+                    balance = result.balance;
+                    updateUI();
+                    showSuccess('Transaction deleted');
+                }
+            } catch (e) {
+                hide('loading');
+                alert('Error: ' + e.message);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('balance').textContent = `₹${balance.toFixed(2)}`;
+
+            const list = document.getElementById('list');
+            if (transactions.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No transactions yet</p>';
+                return;
+            }
+
+            list.innerHTML = transactions.map((t, i) => `
+                <div class="transaction ${t.type}">
+                    <div>
+                        <strong>${t.description}</strong><br>
+                        <small style="color: #666">${t.category} • ${new Date(t.date).toLocaleDateString()}</small>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span class="amount ${t.type}">
+                            ${t.type === 'income' ? '+' : '-'}₹${t.amount.toFixed(2)}
+                        </span>
+                        <button class="btn btn-danger small-btn" onclick="del(${i})">×</button>
+                    </div>
+                </div>
+            `).reverse().join('');
+        }
+
+        // Auto login
+        window.onload = async () => {
+            const savedUser = localStorage.getItem('user');
+            const savedPass = localStorage.getItem('pass');
+
+            if (savedUser && savedPass) {
+                document.getElementById('loginUser').value = savedUser;
+                document.getElementById('loginPass').value = savedPass;
+            }
+        };
+    </script>
+</body>
+</html>
+
+
