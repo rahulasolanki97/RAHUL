@@ -1,228 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Expense Tracker</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Free Expense Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body{
-  font-family:Arial;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  min-height:100vh;
-  padding:20px;
-}
-.card{
-  background:#fff;
-  max-width:420px;
-  margin:auto;
-  padding:20px;
-  border-radius:15px;
-  box-shadow:0 15px 40px rgba(0,0,0,.3);
-}
-h2{text-align:center}
-.dashboard{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin:10px 0;
-}
-.box{
-  padding:12px;
-  border-radius:10px;
-  color:#fff;
-  text-align:center;
-}
-.income{background:#22c55e}
-.expense{background:#ef4444}
-.net{background:#2563eb}
-
-.balance{
-  background:#2563eb;
-  color:#fff;
-  padding:14px;
-  border-radius:12px;
-  text-align:center;
-  margin:12px 0;
-  font-size:22px;
-}
-
-input,select{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:8px;
-  border:1px solid #ccc;
-}
-
-button{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  margin-top:6px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.add-income{background:#fde047}
-.add-expense{background:#2563eb;color:#fff}
-
-.txn{
-  background:#f9f9f9;
-  padding:10px;
-  margin:6px 0;
-  border-radius:8px;
-  display:flex;
-  justify-content:space-between;
-}
-.del{background:#ef4444;color:#fff;border-radius:6px;padding:4px 8px}
+body{font-family:Arial;background:linear-gradient(90deg,#ffb6c1,#87ceeb);}
+.card{background:#fff;padding:15px;margin:15px auto;width:380px;border-radius:10px;}
+input,button{width:100%;padding:8px;margin:5px 0;}
+button{background:#ff69b4;color:#fff;border:0;cursor:pointer}
+.hide{display:none}
+.box{background:#87ceeb;color:#fff;padding:10px;border-radius:8px}
+.flex{display:flex;gap:10px}
 </style>
 </head>
-
 <body>
 
-<div class="card">
-<h2>💰 Expense Tracker</h2>
-<p>Welcome, <b id="user"></b></p>
-
-<!-- PERIOD SELECT -->
-<select id="period" onchange="updateDashboard()">
-  <option value="day">Today</option>
-  <option value="month" selected>This Month</option>
-  <option value="year">This Year</option>
-</select>
-
-<!-- DASHBOARD -->
-<div class="dashboard">
-  <div class="box income">Income<br><b id="dIncome">₹0</b></div>
-  <div class="box expense">Expense<br><b id="dExpense">₹0</b></div>
-  <div class="box net">Net<br><b id="dNet">₹0</b></div>
+<div class="card" id="auth">
+<h3>Login / Signup</h3>
+<input id="name" placeholder="Name (signup)">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="signup()">Sign Up</button>
+<button onclick="login()">Login</button>
+<button onclick="forgot()">Forgot Password</button>
 </div>
 
-<div class="balance">
-  Balance<br><b id="balance">₹0</b>
+<div class="card hide" id="app">
+<h3>Dashboard</h3>
+<div class="flex">
+<div class="box">Daily ₹<span id="d">0</span></div>
+<div class="box">Monthly ₹<span id="m">0</span></div>
+<div class="box">Yearly ₹<span id="y">0</span></div>
 </div>
+<p>Total Income ₹<span id="inc">0</span></p>
 
-<!-- ✅ AMOUNT ABOVE DESCRIPTION -->
-<input id="amount" type="number" placeholder="Amount">
-<input id="description" placeholder="Description">
+<canvas id="pie"></canvas>
 
-<select id="category">
-  <option>Food</option>
-  <option>Fuel</option>
-  <option>Bills</option>
-  <option>Shopping</option>
-</select>
+<h4>Add Expense</h4>
+<input id="date" type="date">
+<input id="desc" placeholder="Description">
+<input id="cat" placeholder="Category">
+<input id="amt" type="number" placeholder="Amount">
+<button onclick="addExpense()">Add Expense</button>
 
-<button class="add-income" onclick="addTxn('income')">➕ Add Income</button>
-<button class="add-expense" onclick="addTxn('expense')">➖ Add Expense</button>
+<h4>Add Income</h4>
+<input id="isource" placeholder="Income Source">
+<input id="iamt" type="number" placeholder="Amount">
+<button onclick="addIncome()">Add Income</button>
 
-<hr>
-<div id="list"></div>
+<ul id="list"></ul>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbxBmiZvG66vPFrTT6W7gpcoXXN-PemcSHCkCSFLB_IEkr28t0qElMEEavWeiDTqZSNv/exec";
-const USERNAME = "Rahul";
-document.getElementById("user").textContent = USERNAME;
+const API="https://script.google.com/macros/s/AKfycbx5ZzUqyfBOvZFCgZdgt5Q8O1hvIF4Yn9EExJbcw9nGCCrIe4gQj6Xc-6jIHj-0RKfP/exec";
+let user;
 
-let transactions = [];
+const call=d=>fetch(API,{method:"POST",body:JSON.stringify(d)}).then(r=>r.json());
 
-/* LOAD */
-async function load(){
-  const r = await fetch(`${URL}?action=fetch&username=${USERNAME}`);
-  const j = await r.json();
-  transactions = j.transactions || [];
-  updateDashboard();
-  render();
+function signup(){
+  call({action:"signup",name:name.value,email:email.value,password:password.value})
+  .then(r=>alert(r.success?"Signup successful":r.msg));
 }
 
-/* ADD */
-async function addTxn(type){
-  const amt = +amount.value;
-  const desc = description.value.trim();
-  if(!amt || !desc) return alert("Enter amount & description");
+function login(){
+  call({action:"login",email:email.value,password:password.value})
+  .then(r=>{
+    if(!r.success) return alert("Invalid login");
+    user=r.user;
+    auth.classList.add("hide");
+    app.classList.remove("hide");
+    load();
+  });
+}
 
-  await fetch(URL,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"add",
-      username:USERNAME,
-      type:type,
-      description:desc,
-      amount:amt,
-      category:category.value
-    })
+function forgot(){
+  call({action:"forgotPassword",email:email.value})
+  .then(()=>alert("Temporary password sent to email"));
+}
+
+function load(){
+  call({action:"dashboard",userId:user.id})
+  .then(r=>{
+    d.innerText=r.daily;
+    m.innerText=r.monthly;
+    y.innerText=r.yearly;
+    inc.innerText=r.income;
   });
 
-  amount.value="";
-  description.value="";
-  load();
-}
-
-/* DELETE */
-async function delTxn(row){
-  if(!confirm("Delete this transaction?")) return;
-  await fetch(URL,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"delete",
-      username:USERNAME,
-      row:row
-    })
-  });
-  load();
-}
-
-/* DASHBOARD */
-function updateDashboard(){
-  let income=0,expense=0;
-  const now = new Date();
-  const period = document.getElementById("period").value;
-
-  transactions.forEach(t=>{
-    const d = new Date(t.date.split("T")[0]);
-    let ok=false;
-
-    if(period==="day"){
-      ok = d.toDateString() === now.toDateString();
-    }
-    if(period==="month"){
-      ok = d.getMonth()===now.getMonth() &&
-           d.getFullYear()===now.getFullYear();
-    }
-    if(period==="year"){
-      ok = d.getFullYear()===now.getFullYear();
-    }
-
-    if(ok){
-      t.type==="income" ? income+=t.amount : expense+=t.amount;
-    }
+  call({action:"charts",userId:user.id})
+  .then(r=>{
+    new Chart(pie,{
+      type:"pie",
+      data:{labels:Object.keys(r.cat),
+      datasets:[{data:Object.values(r.cat)}]}
+    });
   });
 
-  dIncome.textContent = `₹${income}`;
-  dExpense.textContent = `₹${expense}`;
-  dNet.textContent = `₹${income-expense}`;
-  balance.textContent = `₹${income-expense}`;
+  call({action:"getExpenses",userId:user.id})
+  .then(r=>{
+    list.innerHTML="";
+    r.data.forEach(e=>{
+      list.innerHTML+=
+      `<li>${e[3]} ₹${e[5]}
+      <button onclick="delE('${e[0]}')">❌</button></li>`;
+    });
+  });
 }
 
-/* LIST */
-function render(){
-  list.innerHTML = transactions
-    .sort((a,b)=>new Date(b.date)-new Date(a.date))
-    .map(t=>`
-      <div class="txn">
-        <div>
-          ${t.type==="income"?"+":"-"}₹${t.amount}<br>
-          <small>${t.description} • ${t.category}</small>
-        </div>
-        <button class="del" onclick="delTxn(${t.row})">✕</button>
-      </div>
-    `).join("");
+function addExpense(){
+  call({
+    action:"addExpense",
+    userId:user.id,
+    date:date.value,
+    description:desc.value,
+    category:cat.value,
+    amount:amt.value
+  }).then(load);
 }
 
-load();
+function addIncome(){
+  call({
+    action:"addIncome",
+    userId:user.id,
+    date:new Date().toISOString().slice(0,10),
+    source:isource.value,
+    amount:iamt.value
+  }).then(load);
+}
+
+function delE(id){
+  call({action:"deleteExpense",id}).then(load);
+}
 </script>
-
 </body>
 </html>
